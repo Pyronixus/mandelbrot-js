@@ -33,8 +33,6 @@ const config = {
   },
 
   limits: {
-    MIN_SCALE: 80, // Prevent zooming too far out
-    MAX_SCALE: 1e14, // Prevent zooming past emulated double limits
     MAX_ZOOM_FACTOR_PER_SEC: 16, // Maximum zoom speed (2x per second, logarithmic)
     BOUNDS_MIN_X: -10.0, // Leftmost world coordinate
     BOUNDS_MAX_X: 10.0, // Rightmost world coordinate

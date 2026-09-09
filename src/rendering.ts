@@ -1,15 +1,19 @@
 // --- WEBGL RENDERER LOGIC ---
 
 export const palettes: Record<string, string> = {
+  // ORIGINALS
+
   gold: `
     vec3 palette(int iter, float dotZ) {
         float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
         float t = fract(pow(sn, 0.35) * 0.15);
+
         vec3 c0 = vec3(0.000, 0.027, 0.392);
         vec3 c1 = vec3(0.125, 0.420, 0.796);
         vec3 c2 = vec3(0.929, 1.000, 1.000);
         vec3 c3 = vec3(1.000, 0.667, 0.000);
         vec3 c4 = vec3(0.000, 0.008, 0.000);
+
         if      (t < 0.1600) return mix(c0, c1, t / 0.1600);
         else if (t < 0.4200) return mix(c1, c2, (t - 0.1600) / 0.2600);
         else if (t < 0.6425) return mix(c2, c3, (t - 0.4200) / 0.2225);
@@ -17,15 +21,18 @@ export const palettes: Record<string, string> = {
         else                 return mix(c4, c0, (t - 0.8575) / 0.1425);
     }
   `,
+
   fire: `
     vec3 palette(int iter, float dotZ) {
         float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
         float t = fract(pow(sn, 0.35) * 0.15);
+
         vec3 c0 = vec3(0.000, 0.000, 0.000);
         vec3 c1 = vec3(0.502, 0.000, 0.000);
         vec3 c2 = vec3(1.000, 0.420, 0.000);
         vec3 c3 = vec3(1.000, 1.000, 0.200);
         vec3 c4 = vec3(1.000, 1.000, 1.000);
+
         if      (t < 0.25) return mix(c0, c1, t / 0.25);
         else if (t < 0.50) return mix(c1, c2, (t - 0.25) / 0.25);
         else if (t < 0.75) return mix(c2, c3, (t - 0.50) / 0.25);
@@ -33,24 +40,469 @@ export const palettes: Record<string, string> = {
         else               return mix(c4, c0, (t - 0.99) / 0.01);
     }
   `,
+
   rainbow: `
     vec3 palette(int iter, float dotZ) {
         float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
         float t = fract(pow(sn, 0.35) * 0.15);
+
         float r = 0.5 + 0.5 * cos(6.28318 * (t + 0.000));
         float g = 0.5 + 0.5 * cos(6.28318 * (t + 0.333));
         float b = 0.5 + 0.5 * cos(6.28318 * (t + 0.667));
+
         return vec3(r, g, b);
     }
   `,
+
   grayscale: `
     vec3 palette(int iter, float dotZ) {
         float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
         float t = fract(pow(sn, 0.35) * 0.15);
+
         return vec3(t);
     }
   `,
+
+  // PREMIUM / DARK
+
+  amethyst: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.34) * 0.17);
+
+        vec3 c0 = vec3(0.008, 0.004, 0.025);
+        vec3 c1 = vec3(0.075, 0.015, 0.180);
+        vec3 c2 = vec3(0.360, 0.045, 0.610);
+        vec3 c3 = vec3(0.850, 0.300, 0.950);
+        vec3 c4 = vec3(1.000, 0.820, 0.980);
+
+        if      (t < 0.20) return mix(c0, c1, t / 0.20);
+        else if (t < 0.45) return mix(c1, c2, (t - 0.20) / 0.25);
+        else if (t < 0.70) return mix(c2, c3, (t - 0.45) / 0.25);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.70) / 0.18);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  abyss: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.31) * 0.18);
+
+        vec3 c0 = vec3(0.001, 0.006, 0.012);
+        vec3 c1 = vec3(0.005, 0.055, 0.105);
+        vec3 c2 = vec3(0.015, 0.240, 0.330);
+        vec3 c3 = vec3(0.180, 0.720, 0.700);
+        vec3 c4 = vec3(0.820, 1.000, 0.930);
+
+        if      (t < 0.24) return mix(c0, c1, t / 0.24);
+        else if (t < 0.47) return mix(c1, c2, (t - 0.24) / 0.23);
+        else if (t < 0.70) return mix(c2, c3, (t - 0.47) / 0.23);
+        else if (t < 0.90) return mix(c3, c4, (t - 0.70) / 0.20);
+        else               return mix(c4, c0, (t - 0.90) / 0.10);
+    }
+  `,
+
+  midnight: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.32) * 0.17);
+
+        vec3 c0 = vec3(0.002, 0.003, 0.015);
+        vec3 c1 = vec3(0.018, 0.025, 0.110);
+        vec3 c2 = vec3(0.080, 0.120, 0.340);
+        vec3 c3 = vec3(0.310, 0.260, 0.650);
+        vec3 c4 = vec3(0.820, 0.760, 1.000);
+
+        if      (t < 0.20) return mix(c0, c1, t / 0.20);
+        else if (t < 0.45) return mix(c1, c2, (t - 0.20) / 0.25);
+        else if (t < 0.68) return mix(c2, c3, (t - 0.45) / 0.23);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.68) / 0.20);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  wine: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.35) * 0.16);
+
+        vec3 c0 = vec3(0.010, 0.001, 0.006);
+        vec3 c1 = vec3(0.120, 0.008, 0.035);
+        vec3 c2 = vec3(0.390, 0.025, 0.090);
+        vec3 c3 = vec3(0.760, 0.110, 0.180);
+        vec3 c4 = vec3(1.000, 0.570, 0.430);
+
+        if      (t < 0.22) return mix(c0, c1, t / 0.22);
+        else if (t < 0.46) return mix(c1, c2, (t - 0.22) / 0.24);
+        else if (t < 0.70) return mix(c2, c3, (t - 0.46) / 0.24);
+        else if (t < 0.89) return mix(c3, c4, (t - 0.70) / 0.19);
+        else               return mix(c4, c0, (t - 0.89) / 0.11);
+    }
+  `,
+
+  // OCEAN / NATURE
+
+  ocean: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.33) * 0.18);
+
+        vec3 c0 = vec3(0.001, 0.008, 0.018);
+        vec3 c1 = vec3(0.000, 0.055, 0.150);
+        vec3 c2 = vec3(0.000, 0.320, 0.550);
+        vec3 c3 = vec3(0.020, 0.780, 0.820);
+        vec3 c4 = vec3(0.700, 1.000, 0.960);
+
+        if      (t < 0.21) return mix(c0, c1, t / 0.21);
+        else if (t < 0.46) return mix(c1, c2, (t - 0.21) / 0.25);
+        else if (t < 0.69) return mix(c2, c3, (t - 0.46) / 0.23);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.69) / 0.19);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  aurora: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.36) * 0.16);
+
+        vec3 c0 = vec3(0.004, 0.008, 0.025);
+        vec3 c1 = vec3(0.015, 0.120, 0.210);
+        vec3 c2 = vec3(0.020, 0.650, 0.420);
+        vec3 c3 = vec3(0.420, 0.950, 0.620);
+        vec3 c4 = vec3(0.920, 0.980, 0.720);
+
+        if      (t < 0.18) return mix(c0, c1, t / 0.18);
+        else if (t < 0.43) return mix(c1, c2, (t - 0.18) / 0.25);
+        else if (t < 0.68) return mix(c2, c3, (t - 0.43) / 0.25);
+        else if (t < 0.87) return mix(c3, c4, (t - 0.68) / 0.19);
+        else               return mix(c4, c0, (t - 0.87) / 0.13);
+    }
+  `,
+
+  jade: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.35) * 0.17);
+
+        vec3 c0 = vec3(0.001, 0.012, 0.008);
+        vec3 c1 = vec3(0.010, 0.120, 0.075);
+        vec3 c2 = vec3(0.020, 0.400, 0.220);
+        vec3 c3 = vec3(0.180, 0.800, 0.480);
+        vec3 c4 = vec3(0.750, 1.000, 0.800);
+
+        if      (t < 0.20) return mix(c0, c1, t / 0.20);
+        else if (t < 0.45) return mix(c1, c2, (t - 0.20) / 0.25);
+        else if (t < 0.68) return mix(c2, c3, (t - 0.45) / 0.23);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.68) / 0.20);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  // WARM
+
+  copper: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.33) * 0.16);
+
+        vec3 c0 = vec3(0.012, 0.004, 0.002);
+        vec3 c1 = vec3(0.180, 0.035, 0.012);
+        vec3 c2 = vec3(0.600, 0.145, 0.035);
+        vec3 c3 = vec3(0.950, 0.480, 0.160);
+        vec3 c4 = vec3(1.000, 0.900, 0.620);
+
+        if      (t < 0.21) return mix(c0, c1, t / 0.21);
+        else if (t < 0.46) return mix(c1, c2, (t - 0.21) / 0.25);
+        else if (t < 0.69) return mix(c2, c3, (t - 0.46) / 0.23);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.69) / 0.19);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  desert: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.34) * 0.16);
+
+        vec3 c0 = vec3(0.012, 0.006, 0.002);
+        vec3 c1 = vec3(0.180, 0.055, 0.015);
+        vec3 c2 = vec3(0.550, 0.180, 0.035);
+        vec3 c3 = vec3(0.900, 0.500, 0.120);
+        vec3 c4 = vec3(1.000, 0.870, 0.500);
+
+        if      (t < 0.21) return mix(c0, c1, t / 0.21);
+        else if (t < 0.46) return mix(c1, c2, (t - 0.21) / 0.25);
+        else if (t < 0.69) return mix(c2, c3, (t - 0.46) / 0.23);
+        else if (t < 0.89) return mix(c3, c4, (t - 0.69) / 0.20);
+        else               return mix(c4, c0, (t - 0.89) / 0.11);
+    }
+  `,
+
+  sakura: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.37) * 0.15);
+
+        vec3 c0 = vec3(0.012, 0.003, 0.008);
+        vec3 c1 = vec3(0.120, 0.015, 0.055);
+        vec3 c2 = vec3(0.420, 0.060, 0.190);
+        vec3 c3 = vec3(0.900, 0.300, 0.500);
+        vec3 c4 = vec3(1.000, 0.820, 0.860);
+
+        if      (t < 0.20) return mix(c0, c1, t / 0.20);
+        else if (t < 0.45) return mix(c1, c2, (t - 0.20) / 0.25);
+        else if (t < 0.68) return mix(c2, c3, (t - 0.45) / 0.23);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.68) / 0.20);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  // NEON
+
+  electric: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.29) * 0.20);
+
+        vec3 c0 = vec3(0.001, 0.002, 0.012);
+        vec3 c1 = vec3(0.020, 0.015, 0.180);
+        vec3 c2 = vec3(0.050, 0.250, 0.850);
+        vec3 c3 = vec3(0.150, 0.850, 1.000);
+        vec3 c4 = vec3(0.900, 1.000, 1.000);
+
+        if      (t < 0.24) return mix(c0, c1, t / 0.24);
+        else if (t < 0.48) return mix(c1, c2, (t - 0.24) / 0.24);
+        else if (t < 0.71) return mix(c2, c3, (t - 0.48) / 0.23);
+        else if (t < 0.90) return mix(c3, c4, (t - 0.71) / 0.19);
+        else               return mix(c4, c0, (t - 0.90) / 0.10);
+    }
+  `,
+
+  ultraviolet: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.31) * 0.19);
+
+        vec3 c0 = vec3(0.004, 0.001, 0.015);
+        vec3 c1 = vec3(0.035, 0.005, 0.160);
+        vec3 c2 = vec3(0.180, 0.015, 0.600);
+        vec3 c3 = vec3(0.600, 0.080, 1.000);
+        vec3 c4 = vec3(0.950, 0.650, 1.000);
+
+        if      (t < 0.23) return mix(c0, c1, t / 0.23);
+        else if (t < 0.47) return mix(c1, c2, (t - 0.23) / 0.24);
+        else if (t < 0.70) return mix(c2, c3, (t - 0.47) / 0.23);
+        else if (t < 0.89) return mix(c3, c4, (t - 0.70) / 0.19);
+        else               return mix(c4, c0, (t - 0.89) / 0.11);
+    }
+  `,
+
+  toxic: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.30) * 0.19);
+
+        vec3 c0 = vec3(0.002, 0.006, 0.001);
+        vec3 c1 = vec3(0.030, 0.150, 0.005);
+        vec3 c2 = vec3(0.250, 0.650, 0.010);
+        vec3 c3 = vec3(0.720, 1.000, 0.035);
+        vec3 c4 = vec3(0.900, 1.000, 0.650);
+
+        if      (t < 0.23) return mix(c0, c1, t / 0.23);
+        else if (t < 0.48) return mix(c1, c2, (t - 0.23) / 0.25);
+        else if (t < 0.70) return mix(c2, c3, (t - 0.48) / 0.22);
+        else if (t < 0.89) return mix(c3, c4, (t - 0.70) / 0.19);
+        else               return mix(c4, c0, (t - 0.89) / 0.11);
+    }
+  `,
+
+  // MONOCHROME / METALLIC
+
+  pearl: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.38) * 0.14);
+
+        vec3 c0 = vec3(0.008, 0.010, 0.018);
+        vec3 c1 = vec3(0.090, 0.110, 0.160);
+        vec3 c2 = vec3(0.360, 0.410, 0.500);
+        vec3 c3 = vec3(0.780, 0.820, 0.880);
+        vec3 c4 = vec3(1.000, 0.970, 0.880);
+
+        if      (t < 0.19) return mix(c0, c1, t / 0.19);
+        else if (t < 0.43) return mix(c1, c2, (t - 0.19) / 0.24);
+        else if (t < 0.68) return mix(c2, c3, (t - 0.43) / 0.25);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.68) / 0.20);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  // ULTRA COLOR
+
+  prismatic: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.27) * 0.22);
+
+        vec3 c0 = vec3(0.015, 0.005, 0.050);
+        vec3 c1 = vec3(0.100, 0.020, 0.650);
+        vec3 c2 = vec3(0.000, 0.650, 1.000);
+        vec3 c3 = vec3(0.000, 1.000, 0.450);
+        vec3 c4 = vec3(1.000, 0.950, 0.000);
+
+        float phase = t * 6.28318;
+
+        vec3 rainbow = vec3(
+            0.5 + 0.5 * cos(phase),
+            0.5 + 0.5 * cos(phase + 2.09439),
+            0.5 + 0.5 * cos(phase + 4.18879)
+        );
+
+        vec3 base;
+
+        if      (t < 0.18) base = mix(c0, c1, t / 0.18);
+        else if (t < 0.38) base = mix(c1, c2, (t - 0.18) / 0.20);
+        else if (t < 0.58) base = mix(c2, c3, (t - 0.38) / 0.20);
+        else if (t < 0.78) base = mix(c3, c4, (t - 0.58) / 0.20);
+        else               base = mix(c4, c0, (t - 0.78) / 0.22);
+
+        return mix(base, rainbow, 0.38);
+    }
+  `,
+
+  // DEEP MAGENTA / BLUE
+
+  nebula: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.32) * 0.18);
+
+        vec3 c0 = vec3(0.003, 0.001, 0.012);
+        vec3 c1 = vec3(0.055, 0.005, 0.120);
+        vec3 c2 = vec3(0.240, 0.015, 0.420);
+        vec3 c3 = vec3(0.700, 0.080, 0.600);
+        vec3 c4 = vec3(1.000, 0.450, 0.750);
+
+        if      (t < 0.22) return mix(c0, c1, t / 0.22);
+        else if (t < 0.46) return mix(c1, c2, (t - 0.22) / 0.24);
+        else if (t < 0.69) return mix(c2, c3, (t - 0.46) / 0.23);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.69) / 0.19);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  sapphire: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.30) * 0.18);
+
+        vec3 c0 = vec3(0.001, 0.003, 0.015);
+        vec3 c1 = vec3(0.005, 0.025, 0.130);
+        vec3 c2 = vec3(0.015, 0.120, 0.480);
+        vec3 c3 = vec3(0.100, 0.420, 1.000);
+        vec3 c4 = vec3(0.700, 0.900, 1.000);
+
+        if      (t < 0.21) return mix(c0, c1, t / 0.21);
+        else if (t < 0.45) return mix(c1, c2, (t - 0.21) / 0.24);
+        else if (t < 0.69) return mix(c2, c3, (t - 0.45) / 0.24);
+        else if (t < 0.89) return mix(c3, c4, (t - 0.69) / 0.20);
+        else               return mix(c4, c0, (t - 0.89) / 0.11);
+    }
+  `,
+
+  // RED / BLUE CONTRAST
+
+  ember: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.31) * 0.19);
+
+        vec3 c0 = vec3(0.005, 0.001, 0.002);
+        vec3 c1 = vec3(0.130, 0.005, 0.008);
+        vec3 c2 = vec3(0.500, 0.025, 0.015);
+        vec3 c3 = vec3(1.000, 0.220, 0.020);
+        vec3 c4 = vec3(1.000, 0.820, 0.300);
+
+        if      (t < 0.22) return mix(c0, c1, t / 0.22);
+        else if (t < 0.46) return mix(c1, c2, (t - 0.22) / 0.24);
+        else if (t < 0.70) return mix(c2, c3, (t - 0.46) / 0.24);
+        else if (t < 0.90) return mix(c3, c4, (t - 0.70) / 0.20);
+        else               return mix(c4, c0, (t - 0.90) / 0.10);
+    }
+  `,
+
+  // COOL METAL
+
+  steel: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.36) * 0.15);
+
+        vec3 c0 = vec3(0.004, 0.006, 0.010);
+        vec3 c1 = vec3(0.055, 0.070, 0.095);
+        vec3 c2 = vec3(0.220, 0.260, 0.320);
+        vec3 c3 = vec3(0.620, 0.680, 0.760);
+        vec3 c4 = vec3(0.980, 0.990, 1.000);
+
+        if      (t < 0.20) return mix(c0, c1, t / 0.20);
+        else if (t < 0.44) return mix(c1, c2, (t - 0.20) / 0.24);
+        else if (t < 0.68) return mix(c2, c3, (t - 0.44) / 0.24);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.68) / 0.20);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `,
+
+  // ROSE GOLD
+
+  roseGold: `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.34) * 0.16);
+
+        vec3 c0 = vec3(0.012, 0.004, 0.006);
+        vec3 c1 = vec3(0.180, 0.025, 0.045);
+        vec3 c2 = vec3(0.520, 0.090, 0.140);
+        vec3 c3 = vec3(0.900, 0.360, 0.420);
+        vec3 c4 = vec3(1.000, 0.760, 0.680);
+
+        if      (t < 0.21) return mix(c0, c1, t / 0.21);
+        else if (t < 0.46) return mix(c1, c2, (t - 0.21) / 0.25);
+        else if (t < 0.69) return mix(c2, c3, (t - 0.46) / 0.23);
+        else if (t < 0.89) return mix(c3, c4, (t - 0.69) / 0.20);
+        else               return mix(c4, c0, (t - 0.89) / 0.11);
+    }
+  `,
 };
+
+export function createCustomPalette(colors: string[]): string {
+  const channels = colors.map((color) => {
+    const hex = color.replace("#", "");
+    const value = Number.parseInt(hex, 16);
+    const r = ((value >> 16) & 255) / 255;
+    const g = ((value >> 8) & 255) / 255;
+    const b = (value & 255) / 255;
+    return `vec3(${r.toFixed(4)}, ${g.toFixed(4)}, ${b.toFixed(4)})`;
+  });
+
+  return `
+    vec3 palette(int iter, float dotZ) {
+        float sn = float(iter) + 1.0 - log2(log2(dotZ) * 0.5);
+        float t = fract(pow(sn, 0.34) * 0.18);
+        vec3 c0 = ${channels[0]};
+        vec3 c1 = ${channels[1]};
+        vec3 c2 = ${channels[2]};
+        vec3 c3 = ${channels[3]};
+        vec3 c4 = ${channels[4]};
+        if      (t < 0.20) return mix(c0, c1, t / 0.20);
+        else if (t < 0.45) return mix(c1, c2, (t - 0.20) / 0.25);
+        else if (t < 0.68) return mix(c2, c3, (t - 0.45) / 0.23);
+        else if (t < 0.88) return mix(c3, c4, (t - 0.68) / 0.20);
+        else               return mix(c4, c0, (t - 0.88) / 0.12);
+    }
+  `;
+}
 
 export interface RenderBatchParams {
   fx: number;

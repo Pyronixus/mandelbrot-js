@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback, useState } from "react";
-import { MandelbrotRenderer, palettes } from "./rendering";
+import { createCustomPalette, MandelbrotRenderer, palettes } from "./rendering";
 import config from "./config";
-import { MdDownload, MdShare, MdClose, MdSettings } from "react-icons/md";
+import { MdDownload, MdShare, MdClose, MdSettings, MdRefresh } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
 import { FaUser } from "react-icons/fa6";
 
@@ -24,6 +24,32 @@ interface Point {
   x: number;
   y: number;
 }
+
+type IterationMode = "manual" | "adaptive20" | "adaptive30" | "adaptive60";
+
+const paletteDetails: Record<string, { label: string; colors: string[] }> = {
+  gold: { label: "Gold", colors: ["#001a64", "#206bd0", "#edffff", "#ffab00"] },
+  fire: { label: "Fire", colors: ["#050000", "#850000", "#ff6b00", "#ffff5a"] },
+  rainbow: { label: "Rainbow", colors: ["#ff304f", "#ffdb45", "#42e8b4", "#4778ff"] },
+  grayscale: { label: "Grayscale", colors: ["#08090d", "#424957", "#b5bfce", "#ffffff"] },
+  amethyst: { label: "Amethyst", colors: ["#16053e", "#7020ae", "#d94ff2", "#ffe0fa"] },
+  abyss: { label: "Abyss", colors: ["#01131f", "#08778a", "#43d6c3", "#d1ffed"] },
+  midnight: { label: "Midnight", colors: ["#02030f", "#081c6b", "#513fa6", "#d1c2ff"] },
+  wine: { label: "Wine", colors: ["#1a020c", "#690d2d", "#c22e58", "#ffb08d"] },
+  ocean: { label: "Ocean", colors: ["#020d1d", "#004e91", "#05bdd1", "#d7fff7"] },
+  aurora: { label: "Aurora", colors: ["#031238", "#087ca8", "#31d28d", "#eaff9d"] },
+  jade: { label: "Jade", colors: ["#031f18", "#087b4e", "#54db89", "#d5ffe0"] },
+  copper: { label: "Copper", colors: ["#261006", "#9e3511", "#f27f32", "#ffed9e"] },
+  desert: { label: "Desert", colors: ["#211005", "#a44416", "#f28a27", "#fff0a1"] },
+  sakura: { label: "Sakura", colors: ["#1f0612", "#8e1d58", "#ed6788", "#ffe2eb"] },
+  electric: { label: "Electric", colors: ["#02031f", "#182de0", "#27dfff", "#f0ffff"] },
+  ultraviolet: { label: "Ultraviolet", colors: ["#0e022d", "#4c13c9", "#cc4bff", "#f4d9ff"] },
+  toxic: { label: "Toxic", colors: ["#071c03", "#41a90b", "#c4f52f", "#efffc7"] },
+  pearl: { label: "Pearl", colors: ["#0c101b", "#6c7890", "#d7deeb", "#fff5d5"] },
+  prismatic: { label: "Prismatic", colors: ["#210b75", "#00bfff", "#00e68a", "#ffe000"] },
+  nebula: { label: "Nebula", colors: ["#100328", "#7221ac", "#de4ebd", "#ffb1cd"] },
+  custom: { label: "Custom", colors: ["#07111f", "#2673b8", "#5de0c0", "#f4d35e", "#f07167"] },
+};
 
 function isMobile(): boolean {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -85,6 +111,7 @@ export default function MandelbrotExplorer() {
 
   const [showInstructions, setShowInstructions] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [viewVersion, setViewVersion] = useState(0);
   const [itersPerLevel, setItersPerLevel] = useState(() => {
     const val = _urlParams.iters;
     if (isFinite(val) && val > 0) {
@@ -97,11 +124,20 @@ export default function MandelbrotExplorer() {
     config.mandelbrot.ITERS_PER_LEVEL_INIT = defaultIters;
     return defaultIters;
   });
+  const [iterationMode, setIterationMode] = useState<IterationMode>("manual");
+  const iterationModeRef = useRef<IterationMode>("manual");
+  const lastAdaptiveUpdateRef = useRef(0);
   const [palette, setPalette] = useState(() =>
     _urlParams.pal && _urlParams.pal in palettes
       ? _urlParams.pal
       : config.mandelbrot.DEFAULT_PALETTE,
   );
+  const [customColors, setCustomColors] = useState(paletteDetails.custom.colors);
+
+  const setIterationModeAndSync = (mode: IterationMode) => {
+    iterationModeRef.current = mode;
+    setIterationMode(mode);
+  };
 
   // Hide instructions after 10 seconds
   useEffect(() => {
@@ -155,22 +191,14 @@ export default function MandelbrotExplorer() {
     if (!containerRef.current) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
 
-    // 1. Clamp Scale (Zoom Limits)
     const {
-      MIN_SCALE,
-      MAX_SCALE,
       BOUNDS_MIN_X,
       BOUNDS_MAX_X,
       BOUNDS_MIN_Y,
       BOUNDS_MAX_Y,
     } = config.limits;
 
-    view.current.scale = Math.max(
-      MIN_SCALE,
-      Math.min(MAX_SCALE, view.current.scale),
-    );
-
-    // 2. Clamp Coordinates (Pan Limits)
+    // Clamp coordinates to the supported world bounds.
     const worldWidth = width / view.current.scale;
     const worldHeight = height / view.current.scale;
 
@@ -294,17 +322,21 @@ export default function MandelbrotExplorer() {
           }
 
           const currentMaxIters = maxItersForShader();
+          const paletteSource =
+            palette === "custom"
+              ? createCustomPalette(customColors)
+              : palettes[palette];
           if (
             !rendererRef.current ||
             rendererRef.current.physicalSize !== physicalSize ||
-            rendererRef.current.palette !== palette ||
+            rendererRef.current.palette !== paletteSource ||
             rendererRef.current.maxIters !== currentMaxIters
           ) {
             rendererRef.current?.delete();
             rendererRef.current = new MandelbrotRenderer(
               physicalSize,
               config.tile.MAX_TILES_PER_FRAME,
-              palettes[palette],
+              paletteSource,
               currentMaxIters,
             );
           }
@@ -399,6 +431,34 @@ export default function MandelbrotExplorer() {
           const sd = Math.sqrt(Math.max(0, variance));
           const refFps = 1000 / (emaDurationRef.current + 2 * sd);
 
+          const adaptiveTargets: Record<Exclude<IterationMode, "manual">, number> = {
+            adaptive20: 20,
+            adaptive30: 30,
+            adaptive60: 60,
+          };
+          const adaptiveTarget =
+            iterationModeRef.current === "manual"
+              ? null
+              : adaptiveTargets[iterationModeRef.current];
+          if (
+            adaptiveTarget !== null &&
+            time - lastAdaptiveUpdateRef.current > 400
+          ) {
+            const currentIterations = config.mandelbrot.ITERS_PER_LEVEL_INIT;
+            const nextIterations =
+              refFps < adaptiveTarget - 1
+                ? Math.max(64, currentIterations - 64)
+                : refFps > adaptiveTarget + 1
+                  ? Math.min(8192, currentIterations + 64)
+                  : currentIterations;
+            if (nextIterations !== currentIterations) {
+              config.mandelbrot.ITERS_PER_LEVEL_INIT = nextIterations;
+              setItersPerLevel(nextIterations);
+              tileCache.current.clear();
+              lastAdaptiveUpdateRef.current = time;
+            }
+          }
+
           if (refFps < 15) {
             tilesPerFrameRef.current = Math.max(
               1,
@@ -485,7 +545,7 @@ export default function MandelbrotExplorer() {
 
       loopRef.current = requestAnimationFrame(renderFrame);
     },
-    [enforceLimits, palette, showModal],
+    [customColors, enforceLimits, palette, showModal],
   );
 
   useEffect(() => {
@@ -525,13 +585,6 @@ export default function MandelbrotExplorer() {
     e.preventDefault();
 
     const zoomMultiplier = Math.pow(0.99, e.deltaY * 0.1);
-
-    if (
-      (zoomMultiplier > 1 && view.current.scale == config.limits.MAX_SCALE) ||
-      (zoomMultiplier < 1 && view.current.scale == config.limits.MIN_SCALE)
-    ) {
-      return;
-    }
 
     const rect = containerRef.current!.getBoundingClientRect();
 
@@ -634,6 +687,20 @@ export default function MandelbrotExplorer() {
     containerRef.current?.releasePointerCapture(e.pointerId);
   };
 
+  const resetView = () => {
+    view.current = {
+      x: isFinite(_urlParams.x) ? _urlParams.x : -0.5,
+      y: isFinite(_urlParams.y) ? _urlParams.y : 0,
+      scale: isFinite(_urlParams.z) && _urlParams.z > 0 ? _urlParams.z : 100,
+    };
+    enforceLimits();
+    tileCache.current.clear();
+    tilesPerFrameRef.current = config.tile.INITIAL_TILES_PER_FRAME;
+    lastFrameTimeRef.current = 0;
+    wasLastIntensiveRef.current = false;
+    setViewVersion((version) => version + 1);
+  };
+
   return (
     <div className="w-dvw h-dvh relative">
       <div
@@ -677,7 +744,7 @@ export default function MandelbrotExplorer() {
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-[#111] text-white rounded-2xl p-8 max-w-sm w-[90%] flex flex-col gap-5 relative"
+            className="settings-modal-panel bg-[#111] text-white rounded-2xl p-8 max-w-sm w-[90%] flex flex-col gap-5 relative"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -688,69 +755,129 @@ export default function MandelbrotExplorer() {
             </button>
 
             <div>
-              <h2 className="text-xl font-bold mb-3">Settings</h2>
-              <div className="flex justify-between items-center">
-                <label className="text-sm text-white/60">
-                  Number of iterations
-                </label>
-                <select
+              <h2 className="text-xl font-bold mb-5">Settings</h2>
+              <div className="rounded-xl bg-white/4 px-4 py-4">
+                <div className="flex items-center justify-between gap-4 mb-3">
+                  <label htmlFor="iterations" className="text-sm text-white/65">
+                    Number of iterations
+                  </label>
+                  <output htmlFor="iterations" className="text-sm font-semibold tabular-nums text-white">
+                    {iterationMode === "manual"
+                      ? itersPerLevel.toLocaleString()
+                      : iterationMode === "adaptive20"
+                        ? "Adaptive · 20 FPS"
+                        : iterationMode === "adaptive30"
+                          ? "Adaptive · 30 FPS"
+                          : "Adaptive · 60 FPS"}
+                  </output>
+                </div>
+                <div className="iteration-mode-grid">
+                  {(["manual", "adaptive20", "adaptive30", "adaptive60"] as IterationMode[]).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      className={`iteration-mode-button ${iterationMode === mode ? "iteration-mode-active" : ""}`}
+                      onClick={() => setIterationModeAndSync(mode)}
+                    >
+                      {mode === "manual" ? (
+                        <>
+                          <span className="iteration-mode-value">Manual</span>
+                          <span className="iteration-mode-caption">Fixed detail</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="iteration-mode-value">{mode.replace("adaptive", "")}</span>
+                          <span className="iteration-mode-caption">FPS target</span>
+                        </>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  id="iterations"
+                  type="range"
+                  min={64}
+                  max={8192}
+                  step={64}
                   value={itersPerLevel}
+                  disabled={iterationMode !== "manual"}
                   onChange={(e) => {
                     const val = Number(e.target.value);
                     setItersPerLevel(val);
                     config.mandelbrot.ITERS_PER_LEVEL_INIT = val;
                     tileCache.current.clear();
-                    setShowModal(false);
                   }}
-                  className="w-32 bg-white/10 text-white text-sm rounded-lg px-3 py-1 border-none cursor-pointer outline-none"
-                >
-                  <option value={64} className="bg-[#222] text-white">
-                    very low
-                  </option>
-                  <option value={128} className="bg-[#222] text-white">
-                    low
-                  </option>
-                  <option value={256} className="bg-[#222] text-white">
-                    medium
-                  </option>
-                  <option value={512} className="bg-[#222] text-white">
-                    high
-                  </option>
-                  <option value={2048} className="bg-[#222] text-white">
-                    very high
-                  </option>
-                  <option value={8192} className="bg-[#222] text-white">
-                    extreme
-                  </option>
-                </select>
+                  className="settings-range w-full"
+                />
+                <div className="mt-2 flex justify-between text-[10px] uppercase tracking-[0.14em] text-white/30">
+                  <span>Fast</span>
+                  <span>Detailed</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center mt-3">
-                <label className="text-sm text-white/60">Color palette</label>
-                <select
-                  value={palette}
-                  onChange={(e) => {
-                    setPalette(e.target.value);
-                    tileCache.current.clear();
-                    setShowModal(false);
-                  }}
-                  className="w-32 bg-white/10 text-white text-sm rounded-lg px-3 py-1 border-none cursor-pointer outline-none"
-                >
-                  {Object.keys(palettes).map((name) => (
-                    <option
-                      key={name}
-                      value={name}
-                      className="bg-[#222] text-white"
-                    >
-                      {name}
-                    </option>
-                  ))}
-                </select>
+
+              <div className="mt-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm text-white/65">Color palette</span>
+                  <span className="text-xs font-medium text-white/40">
+                    {paletteDetails[palette]?.label ?? palette}
+                  </span>
+                </div>
+                <div className="palette-grid">
+                  {Object.keys(paletteDetails).map((name) => {
+                    const details = name === "custom"
+                      ? { ...paletteDetails.custom, colors: customColors }
+                      : paletteDetails[name];
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        aria-label={`Use ${details.label} palette`}
+                        aria-pressed={palette === name}
+                        title={details.label}
+                        onClick={() => {
+                          setPalette(name);
+                          tileCache.current.clear();
+                        }}
+                        className={`palette-swatch ${palette === name ? "palette-swatch-active" : ""}`}
+                        style={{
+                          background: `linear-gradient(135deg, ${details.colors.join(", ")})`,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                {palette === "custom" && (
+                  <div className="mt-4 flex items-center justify-between rounded-lg bg-white/4 px-3 py-2">
+                    <span className="text-xs text-white/45">Customize gradient</span>
+                    <div className="flex gap-2">
+                      {customColors.map((color, index) => (
+                        <label key={index} className="custom-color-input" style={{ backgroundColor: color }}>
+                          <span className="sr-only">Custom color {index + 1}</span>
+                          <input
+                            type="color"
+                            value={color}
+                            onChange={(e) => {
+                              const nextColors = [...customColors];
+                              nextColors[index] = e.target.value;
+                              setCustomColors(nextColors);
+                              setPalette("custom");
+                              tileCache.current.clear();
+                            }}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             <div>
               <h2 className="text-xl font-bold mb-3">Current View</h2>
-              <div className="bg-white/5 rounded-xl px-4 py-3 font-mono text-xs flex flex-col gap-2">
+              <div
+                key={viewVersion}
+                className="bg-white/5 rounded-xl px-4 py-3 font-mono text-xs flex flex-col gap-2"
+              >
                 {(() => {
                   const { x, y, scale } = view.current;
                   const decimals = Math.min(15, Math.ceil(Math.log10(scale)));
@@ -773,6 +900,12 @@ export default function MandelbrotExplorer() {
                 })()}
               </div>
               <div className="flex flex-col gap-2 mt-3">
+                <button
+                  onClick={resetView}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm cursor-pointer border-none transition-colors"
+                >
+                  <MdRefresh className="text-base mr-1 shrink-0" /> Reset view
+                </button>
                 <button
                   onClick={() => {
                     const canvas = mainCanvasRef.current;
