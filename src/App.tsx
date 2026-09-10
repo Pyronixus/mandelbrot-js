@@ -270,7 +270,7 @@ export default function MandelbrotExplorer() {
         bottom: vy + height / 2 / scale,
       };
 
-      const targetL = Math.floor(Math.log2(scale / config.tile.TILE_SIZE));
+      const targetL = Math.ceil(Math.log2(scale / config.tile.TILE_SIZE));
       const currentTilesPerFrame =
         (isInteractingRef.current || showModal) && !config.preview.ENABLED
           ? 0
@@ -521,7 +521,7 @@ export default function MandelbrotExplorer() {
           continue;
         }
 
-        ctx.imageSmoothingEnabled = tile.L <= targetL - 2 ? false : true;
+        ctx.imageSmoothingEnabled = true;
 
         ctx.drawImage(
           tile.canvas,
@@ -771,25 +771,17 @@ export default function MandelbrotExplorer() {
                           : "Adaptive · 60 FPS"}
                   </output>
                 </div>
-                <div className="iteration-mode-grid">
+                <div className="iteration-mode-grid" role="group" aria-label="Iteration mode">
                   {(["manual", "adaptive20", "adaptive30", "adaptive60"] as IterationMode[]).map((mode) => (
                     <button
                       key={mode}
                       type="button"
+                      aria-pressed={iterationMode === mode}
+                      aria-label={mode === "manual" ? "Manual iterations" : `Adaptive ${mode.replace("adaptive", "")} FPS`}
                       className={`iteration-mode-button ${iterationMode === mode ? "iteration-mode-active" : ""}`}
                       onClick={() => setIterationModeAndSync(mode)}
                     >
-                      {mode === "manual" ? (
-                        <>
-                          <span className="iteration-mode-value">Manual</span>
-                          <span className="iteration-mode-caption">Fixed detail</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="iteration-mode-value">{mode.replace("adaptive", "")}</span>
-                          <span className="iteration-mode-caption">FPS target</span>
-                        </>
-                      )}
+                      {mode === "manual" ? "Manual" : `${mode.replace("adaptive", "")} FPS`}
                     </button>
                   ))}
                 </div>
