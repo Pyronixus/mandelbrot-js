@@ -27,6 +27,13 @@ interface Point {
 
 type IterationMode = "manual" | "adaptive20" | "adaptive30" | "adaptive60";
 
+type LoadingKind = "zoom" | "settings";
+
+interface LoadingState {
+  kind: LoadingKind;
+  progress: number;
+}
+
 const paletteDetails: Record<string, { label: string; colors: string[] }> = {
   gold: { label: "Gold", colors: ["#001a64", "#206bd0", "#edffff", "#ffab00"] },
   fire: { label: "Fire", colors: ["#050000", "#850000", "#ff6b00", "#ffff5a"] },
@@ -70,6 +77,34 @@ function iterationsAtLevel(level: number): number {
   );
 }
 
+function formatViewValue(value: number): string {
+  return String(value);
+}
+
+function formatZoomValue(scale: number): string {
+  return scale.toExponential(2);
+}
+
+const MIN_SLIDER_ZOOM = 1;
+const MAX_SLIDER_ZOOM = 1e20;
+
+function zoomToSliderValue(scale: number): number {
+  return (
+    (Math.log(Math.max(MIN_SLIDER_ZOOM, Math.min(MAX_SLIDER_ZOOM, scale))) -
+      Math.log(MIN_SLIDER_ZOOM)) /
+    (Math.log(MAX_SLIDER_ZOOM) - Math.log(MIN_SLIDER_ZOOM)) *
+    100
+  );
+}
+
+function sliderValueToZoom(value: number): number {
+  return Math.exp(
+    Math.log(MIN_SLIDER_ZOOM) +
+      (Math.log(MAX_SLIDER_ZOOM) - Math.log(MIN_SLIDER_ZOOM)) *
+        (value / 100),
+  );
+}
+
 // --- URL PARAMS (parsed once at module load) ---
 
 const _p = new URLSearchParams(window.location.search);
@@ -87,6 +122,10 @@ export default function MandelbrotExplorer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mainCanvasRef = useRef<HTMLCanvasElement>(null);
   const debugTextRef = useRef<HTMLDivElement>(null);
+  const xInputRef = useRef<HTMLInputElement>(null);
+  const yInputRef = useRef<HTMLInputElement>(null);
+  const zoomInputRef = useRef<HTMLInputElement>(null);
+  const zoomSliderRef = useRef<HTMLInputElement>(null);
 
   const tileCache = useRef<Map<string, TileData>>(new Map());
   const view = useRef<ViewState>({
@@ -96,6 +135,8 @@ export default function MandelbrotExplorer() {
   });
   const activePointers = useRef<Map<number, Point>>(new Map());
   const loopRef = useRef<number>(0);
+  const renderFrameRef = useRef<(time: number) => void>(() => undefined);
+  const stableFrameRef = useRef<HTMLCanvasElement | null>(null);
 
   const rendererRef = useRef<MandelbrotRenderer | null>(null);
   const isRenderingRef = useRef<boolean>(false);
@@ -111,6 +152,8 @@ export default function MandelbrotExplorer() {
 
   const [showInstructions, setShowInstructions] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const loadingStateRef = useRef<LoadingState | null>(null);
+  const lastLoadingProgressRef = useRef(-1);
   const [viewVersion, setViewVersion] = useState(0);
   const [itersPerLevel, setItersPerLevel] = useState(() => {
     const val = _urlParams.iters;
@@ -137,6 +180,48 @@ export default function MandelbrotExplorer() {
   const setIterationModeAndSync = (mode: IterationMode) => {
     iterationModeRef.current = mode;
     setIterationMode(mode);
+  };
+
+  const beginLoading = (kind: LoadingKind) => {
+    const currentCanvas = mainCanvasRef.current;
+    if (
+      !loadingStateRef.current &&
+      currentCanvas &&
+      currentCanvas.width > 0 &&
+      currentCanvas.height > 0
+    ) {
+      const stableFrame = stableFrameRef.current ?? document.createElement("canvas");
+      stableFrame.width = currentCanvas.width;
+      stableFrame.height = currentCanvas.height;
+      stableFrame.getContext("2d")?.drawImage(currentCanvas, 0, 0);
+      stableFrameRef.current = stableFrame;
+    }
+
+    const nextState = { kind, progress: 0 };
+    loadingStateRef.current = nextState;
+    lastLoadingProgressRef.current = -1;
+  };
+
+  const updateLoadingProgress = (progress: number) => {
+    const activeState = loadingStateRef.current;
+    if (!activeState) return;
+
+    const roundedProgress = Math.min(1, Math.round(progress * 100) / 100);
+    if (
+      roundedProgress === lastLoadingProgressRef.current &&
+      roundedProgress !== 1
+    ) {
+      return;
+    }
+
+    lastLoadingProgressRef.current = roundedProgress;
+    if (roundedProgress >= 1) {
+      loadingStateRef.current = null;
+      stableFrameRef.current = null;
+    } else {
+      const nextState = { ...activeState, progress: roundedProgress };
+      loadingStateRef.current = nextState;
+    }
   };
 
   // Hide instructions after 10 seconds
@@ -262,6 +347,22 @@ export default function MandelbrotExplorer() {
       if (screenWasResized) enforceLimits();
 
       const { x: vx, y: vy, scale } = view.current;
+      if (xInputRef.current && document.activeElement !== xInputRef.current) {
+        const value = formatViewValue(vx);
+        if (xInputRef.current.value !== value) xInputRef.current.value = value;
+      }
+      if (yInputRef.current && document.activeElement !== yInputRef.current) {
+        const value = formatViewValue(vy);
+        if (yInputRef.current.value !== value) yInputRef.current.value = value;
+      }
+      if (zoomInputRef.current && document.activeElement !== zoomInputRef.current) {
+        const value = formatZoomValue(scale);
+        if (zoomInputRef.current.value !== value) zoomInputRef.current.value = value;
+      }
+      if (zoomSliderRef.current && document.activeElement !== zoomSliderRef.current) {
+        const value = String(zoomToSliderValue(scale));
+        if (zoomSliderRef.current.value !== value) zoomSliderRef.current.value = value;
+      }
 
       const worldBounds = {
         left: vx - width / 2 / scale,
@@ -272,7 +373,7 @@ export default function MandelbrotExplorer() {
 
       const targetL = Math.ceil(Math.log2(scale / config.tile.TILE_SIZE));
       const currentTilesPerFrame =
-        (isInteractingRef.current || showModal) && !config.preview.ENABLED
+        isInteractingRef.current && !config.preview.ENABLED
           ? 0
           : tilesPerFrameRef.current;
       let isCurrentFrameIntensive = false;
@@ -493,7 +594,12 @@ export default function MandelbrotExplorer() {
       }
 
       // 3. Paint Frame
+      const loadingKindBeforePaint = loadingStateRef.current?.kind;
+      const preserveStableFrame = Boolean(loadingStateRef.current);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (preserveStableFrame && stableFrameRef.current) {
+        ctx.drawImage(stableFrameRef.current, 0, 0);
+      }
 
       const cx = canvas.width / 2;
       const cy = canvas.height / 2;
@@ -503,7 +609,28 @@ export default function MandelbrotExplorer() {
         .filter((t) => t.L <= targetL + 1)
         .sort((a, b) => a.L - b.L);
 
-      for (const tile of drawableTiles) {
+      if (loadingStateRef.current) {
+        const detailSize = Math.pow(2, -targetL);
+        const minX = Math.floor(worldBounds.left / detailSize);
+        const maxX = Math.floor(worldBounds.right / detailSize);
+        const minY = Math.floor(worldBounds.top / detailSize);
+        const maxY = Math.floor(worldBounds.bottom / detailSize);
+        const totalTiles = (maxX - minX + 1) * (maxY - minY + 1);
+        let readyTiles = 0;
+
+        for (let tx = minX; tx <= maxX; tx++) {
+          for (let ty = minY; ty <= maxY; ty++) {
+            if (tileCache.current.has(`${targetL}_${tx}_${ty}`)) readyTiles++;
+          }
+        }
+
+        updateLoadingProgress(totalTiles > 0 ? readyTiles / totalTiles : 1);
+      }
+
+      const settingsStillLoading =
+        loadingKindBeforePaint === "settings" && Boolean(loadingStateRef.current);
+
+      for (const tile of settingsStillLoading ? [] : drawableTiles) {
         const tx = tile.x * tile.fractalSize;
         const ty = tile.y * tile.fractalSize;
 
@@ -543,10 +670,14 @@ export default function MandelbrotExplorer() {
         }
       }
 
-      loopRef.current = requestAnimationFrame(renderFrame);
+      loopRef.current = requestAnimationFrame(renderFrameRef.current);
     },
-    [customColors, enforceLimits, palette, showModal],
+    [customColors, enforceLimits, palette],
   );
+
+  useEffect(() => {
+    renderFrameRef.current = renderFrame;
+  }, [renderFrame]);
 
   useEffect(() => {
     loopRef.current = requestAnimationFrame(renderFrame);
@@ -698,7 +829,40 @@ export default function MandelbrotExplorer() {
     tilesPerFrameRef.current = config.tile.INITIAL_TILES_PER_FRAME;
     lastFrameTimeRef.current = 0;
     wasLastIntensiveRef.current = false;
+    beginLoading("zoom");
     setViewVersion((version) => version + 1);
+  };
+
+  const applyInputView = () => {
+    const x = Number(xInputRef.current?.value);
+    const y = Number(yInputRef.current?.value);
+    const scale = Number(zoomInputRef.current?.value);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(scale) || scale <= 0) {
+      return;
+    }
+
+    view.current = {
+      x,
+      y,
+      scale: Math.max(MIN_SLIDER_ZOOM, Math.min(MAX_SLIDER_ZOOM, scale)),
+    };
+    enforceLimits();
+    tileCache.current.clear();
+    tilesPerFrameRef.current = config.tile.INITIAL_TILES_PER_FRAME;
+    lastFrameTimeRef.current = 0;
+    wasLastIntensiveRef.current = false;
+    beginLoading("zoom");
+  };
+
+  const applySliderZoom = (sliderValue: number) => {
+    view.current.scale = sliderValueToZoom(sliderValue);
+    enforceLimits();
+    tileCache.current.clear();
+    tilesPerFrameRef.current = config.tile.INITIAL_TILES_PER_FRAME;
+    lastFrameTimeRef.current = 0;
+    wasLastIntensiveRef.current = false;
+    beginLoading("zoom");
   };
 
   return (
@@ -798,6 +962,7 @@ export default function MandelbrotExplorer() {
                     setItersPerLevel(val);
                     config.mandelbrot.ITERS_PER_LEVEL_INIT = val;
                     tileCache.current.clear();
+                    beginLoading("settings");
                   }}
                   className="settings-range w-full"
                 />
@@ -829,6 +994,7 @@ export default function MandelbrotExplorer() {
                         onClick={() => {
                           setPalette(name);
                           tileCache.current.clear();
+                          beginLoading("settings");
                         }}
                         className={`palette-swatch ${palette === name ? "palette-swatch-active" : ""}`}
                         style={{
@@ -854,6 +1020,7 @@ export default function MandelbrotExplorer() {
                               setCustomColors(nextColors);
                               setPalette("custom");
                               tileCache.current.clear();
+                              beginLoading("settings");
                             }}
                           />
                         </label>
@@ -870,26 +1037,60 @@ export default function MandelbrotExplorer() {
                 key={viewVersion}
                 className="bg-white/5 rounded-xl px-4 py-3 font-mono text-xs flex flex-col gap-2"
               >
-                {(() => {
-                  const { x, y, scale } = view.current;
-                  const decimals = Math.min(15, Math.ceil(Math.log10(scale)));
-                  return (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-white/40">X</span>
-                        <span>{x.toFixed(decimals)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/40">Y</span>
-                        <span>{y.toFixed(decimals)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/40">Zoom</span>
-                        <span>{scale.toExponential(2)}</span>
-                      </div>
-                    </>
-                  );
-                })()}
+                <label className="flex items-center justify-between gap-3">
+                  <span className="text-white/40">X</span>
+                  <input
+                    ref={xInputRef}
+                    type="text"
+                    defaultValue={formatViewValue(view.current.x)}
+                    aria-label="Current X coordinate"
+                    onKeyDown={(e) => e.key === "Enter" && applyInputView()}
+                    onBlur={applyInputView}
+                    className="min-w-0 flex-1 rounded-md border border-white/20 bg-black/30 px-2 py-1 text-right text-white outline-none transition-colors focus:border-white/60 focus:bg-black/50"
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="text-white/40">Y</span>
+                  <input
+                    ref={yInputRef}
+                    type="text"
+                    defaultValue={formatViewValue(view.current.y)}
+                    aria-label="Current Y coordinate"
+                    onKeyDown={(e) => e.key === "Enter" && applyInputView()}
+                    onBlur={applyInputView}
+                    className="min-w-0 flex-1 rounded-md border border-white/20 bg-black/30 px-2 py-1 text-right text-white outline-none transition-colors focus:border-white/60 focus:bg-black/50"
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-white/40">Zoom</span>
+                    <input
+                      ref={zoomInputRef}
+                      type="text"
+                      defaultValue={formatZoomValue(view.current.scale)}
+                      aria-label="Current zoom"
+                      onKeyDown={(e) => e.key === "Enter" && applyInputView()}
+                      onBlur={applyInputView}
+                      className="min-w-0 flex-1 rounded-md border border-white/20 bg-black/30 px-2 py-1 text-right text-white outline-none transition-colors focus:border-white/60 focus:bg-black/50"
+                    />
+                  </div>
+                  <input
+                    ref={zoomSliderRef}
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    defaultValue={zoomToSliderValue(view.current.scale)}
+                    aria-label="Adjust zoom"
+                    onPointerUp={(e) => applySliderZoom(Number(e.currentTarget.value))}
+                    onKeyUp={(e) => {
+                      if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
+                        applySliderZoom(Number(e.currentTarget.value));
+                      }
+                    }}
+                    className="settings-range w-full"
+                  />
+                </label>
               </div>
               <div className="flex flex-col gap-2 mt-3">
                 <button
