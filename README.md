@@ -1,8 +1,8 @@
 # Mandelbrot Explorer
 
-An interactive Mandelbrot set explorer built with WebGL2 and React. Supports deep zoom with emulated double-precision arithmetic, smooth coloring, and a dynamic tile-based rendering system.
+An interactive Mandelbrot set explorer built with WebGL2 and React. Supports deep zoom (up to 1e+16x on standard machine !) with emulated double-precision arithmetic, smooth coloring, and a dynamic tile-based rendering system.
 
-**[Try it live →](https://mandelbrot.musat.ai)**
+**[Try it online→](https://pyronixus.github.io/mandelbrot-js)**
 
 ## Screenshots
 
@@ -20,6 +20,57 @@ An interactive Mandelbrot set explorer built with WebGL2 and React. Supports dee
     <td><img src="public/screenshots/6.png" width="400"/></td>
   </tr>
 </table>
+
+## Features
+
+### Iterations
+
+You can choose the number of iterations using one of the following methods:
+• Manual: Adjust the slider to set a specific value between 64 and 8192.
+• Automatic: Enable adaptive iterations to automatically target a constant frame rate (20, 30, or 60 FPS).
+
+### Palettes
+
+You can choose from a variety of 5-color palettes:
+
+#### Natural Elements & Earth
+* **Desert:** Warm sand, terracotta, and soft clay tones.
+* **Jade:** Rich, soothing greens inspired by precious jade stones.
+* **Ocean:** Deep blues, aquas, and refreshing seafoam shades.
+
+#### Metallic & Minerals
+* **Amethyst:** Vibrant quartz purples and crystalline lavenders.
+* **Copper:** Earthy, metallic oranges and deep brownish-reds.
+* **Gold:** Luxurious, shimmering yellows and rich metallic accents.
+* **Pearl:** Soft, iridescent whites and delicate cream tones.
+
+#### Atmosphere & Space
+* **Abyss:** Dark oceanic depths and profound midnight blues.
+* **Aurora:** Luminous greens, purples, and blues of the northern lights.
+* **Midnight:** Deepest navy blues and shadowy evening hues.
+* **Nebula:** Galactic pinks, deep purples, and cosmic starlight blues.
+
+#### Vibrant & Energetic
+* **Electric:** High-voltage neon blues, bright pinks, and cyans.
+* **Fire:** Intense gradients of red, orange, and blazing yellow.
+* **Prismatic:** A clean, multi-faceted spectrum that mimics refracted light.
+* **Rainbow:** A full spectrum of bright, joyful primary and secondary colors.
+* **Sakura:** Delicate cherry blossom pinks, soft roses, and gentle whites.
+* **Toxic:** Biohazard greens, acid yellows, and sharp contrasting darks.
+* **Ultraviolet:** Deep electric purples and glowing neon violet shades.
+* **Wine:** Rich burgundies, deep merlots, and sophisticated berry tones.
+
+#### Monochrome & Specialized
+* **Grayscale:** Smooth transitions from deep black to pure white.
+* **Custom:** Create your own tailored 5-color combination.
+
+### Coordinates
+
+You can see the current X and Y axes, manually adjust them and use the slider or input fields to adjust the zoom (and x-y axes).
+
+### Sharing
+
+You can use the buttons to download the current view as an image or generate a shareable link with your current settings and view.
 
 ## Technical Overview
 

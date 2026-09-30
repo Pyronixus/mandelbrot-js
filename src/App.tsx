@@ -1178,7 +1178,7 @@ export default function MandelbrotExplorer() {
               <h2 className="text-xl font-bold mb-1">About the project</h2>
 
               <a
-                href="https://github.com/tiberiu02/mandelbrot-js"
+                href="https://github.com/pyronixus/mandelbrot-js"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 text-sm text-white opacity-80 hover:opacity-100 transition-opacity"
@@ -1189,7 +1189,7 @@ export default function MandelbrotExplorer() {
                 <div>
                   <div className="font-semibold">Source Code on GitHub</div>
                   <div className="text-white/40 text-xs text-ellipsis w-full text-nowrap grow-0">
-                    github.com/tiberiu02/mandelbrot-js
+                    github.com/pyronixus/mandelbrot-js
                   </div>
                 </div>
               </a>
@@ -1204,9 +1204,11 @@ export default function MandelbrotExplorer() {
                   <FaUser />
                 </div>
                 <div>
-                  <div className="font-semibold">Created by Tiberiu Musat</div>
-                  <div className="text-white/40 text-xs">
-                    Read more at https://musat.ai
+                  <div className="font-semibold">Created by <a href="https://musat.ai" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                    Tiberiu Musat
+                  </a>, improved by  <a href="https://pyrodevportfolio.vercel.app" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                    Pyronixus
+                  </a>
                   </div>
                 </div>
               </a>
